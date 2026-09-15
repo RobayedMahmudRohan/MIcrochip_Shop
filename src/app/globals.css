@@ -1,0 +1,88 @@
+@import "tailwindcss";
+
+/*
+ * Microchip Shop design tokens.
+ * Colors, radius, and fonts are defined here as CSS variables and mapped
+ * into Tailwind's theme via `@theme inline`, so utilities like `bg-primary`,
+ * `text-muted`, `border-border`, and `rounded-lg` stay consistent everywhere.
+ */
+:root {
+  /* Surfaces */
+  --background: #fafafa; /* page background */
+  --surface: #ffffff; /* header / footer / card background */
+
+  /* Text */
+  --foreground: #18181b; /* main text */
+  --muted: #71717a; /* secondary / muted text */
+
+  /* Border */
+  --border: #e4e4e7;
+
+  /* Primary (brand / interactive) */
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --primary-foreground: #ffffff;
+
+  /* Secondary / accent */
+  --accent: #d97706;
+  --accent-foreground: #ffffff;
+
+  /* Status */
+  --success: #16a34a;
+  --success-foreground: #ffffff;
+  --error: #dc2626;
+  --error-foreground: #ffffff;
+
+  /* Shape */
+  --radius: 0.625rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-error: var(--error);
+  --color-error-foreground: var(--error-foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --radius-lg: var(--radius);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #09090b;
+    --surface: #18181b;
+
+    --foreground: #fafafa;
+    --muted: #a1a1aa;
+
+    --border: #27272a;
+
+    --primary: #3b82f6;
+    --primary-hover: #60a5fa;
+    --primary-foreground: #09090b;
+
+    --accent: #f59e0b;
+    --accent-foreground: #09090b;
+
+    --success: #22c55e;
+    --success-foreground: #09090b;
+    --error: #f87171;
+    --error-foreground: #09090b;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
