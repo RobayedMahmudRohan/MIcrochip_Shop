@@ -1,0 +1,168 @@
+"use client";
+
+import { useChat } from "@ai-sdk/react";
+import { useEffect, useRef, useState } from "react";
+
+const NEAR_BOTTOM_THRESHOLD_PX = 80;
+
+export default function Chat() {
+  const [input, setInput] = useState("");
+
+  const { messages, sendMessage, status, stop } = useChat();
+
+  const isStreaming = status === "streaming";
+  const isSubmitting = status === "submitted";
+
+  const lastMessage = messages[messages.length - 1];
+  const hasVisibleAssistantText =
+    lastMessage?.role === "assistant" &&
+    lastMessage.parts.some(
+      (part) => part.type === "text" && part.text.length > 0,
+    );
+  const showThinkingIndicator =
+    isSubmitting || (isStreaming && !hasVisibleAssistantText);
+
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const shouldAutoScrollRef = useRef(true);
+
+  function isNearBottom(element: HTMLDivElement) {
+    const distanceFromBottom =
+      element.scrollHeight - element.scrollTop - element.clientHeight;
+
+    return distanceFromBottom <= NEAR_BOTTOM_THRESHOLD_PX;
+  }
+
+  function handleMessagesScroll(event: React.UIEvent<HTMLDivElement>) {
+    shouldAutoScrollRef.current = isNearBottom(event.currentTarget);
+  }
+
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+
+    if (!container || !shouldAutoScrollRef.current) {
+      return;
+    }
+
+    container.scrollTop = container.scrollHeight;
+  }, [messages]);
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const text = input.trim();
+
+    if (!text || isSubmitting || isStreaming) {
+      return;
+    }
+
+    setInput("");
+
+    await sendMessage({
+      text,
+    });
+  }
+
+  return (
+    <div className="flex h-full w-full flex-col rounded-2xl border border-slate-300 bg-slate-100 shadow-sm">
+      <div className="border-b border-slate-300 bg-slate-200 p-4">
+        <h1 className="text-xl font-semibold text-slate-900">
+          Microchip Shop AI Assistant
+        </h1>
+
+        <p className="mt-1 text-sm text-slate-700">
+          Ask about electronic components, Arduino, or project ideas.
+        </p>
+      </div>
+
+      <div
+        ref={messagesContainerRef}
+        onScroll={handleMessagesScroll}
+        className="flex-1 space-y-4 overflow-y-auto p-4"
+      >
+        {messages.length === 0 && (
+          <div className="rounded-lg bg-white p-4 text-sm text-slate-700">
+            Ask me something about electronics or the products in the shop.
+          </div>
+        )}
+
+        {messages.map((message) => {
+          const textParts = message.parts.filter(
+            (part): part is Extract<typeof part, { type: "text" }> =>
+              part.type === "text" && part.text.length > 0,
+          );
+
+          if (textParts.length === 0) {
+            return null;
+          }
+
+          return (
+            <div
+              key={message.id}
+              className={`flex ${
+                message.role === "user" ? "justify-end" : "justify-start"
+              }`}
+            >
+              <div
+                className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm ${
+                  message.role === "user"
+                    ? "bg-slate-800 text-white"
+                    : "bg-white text-slate-900 border border-slate-200"
+                }`}
+              >
+                {textParts.map((part, index) => (
+                  <p
+                    key={`${message.id}-${index}`}
+                    className="whitespace-pre-wrap break-words"
+                  >
+                    {part.text}
+                  </p>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+
+        {showThinkingIndicator && (
+          <div className="flex justify-start">
+            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
+              Thinking...
+            </div>
+          </div>
+        )}
+      </div>
+
+      <form
+        onSubmit={handleSubmit}
+        className="border-t border-slate-300 bg-slate-200 p-4"
+      >
+        <div className="flex gap-2">
+          <input
+            value={input}
+            onChange={(event) => setInput(event.target.value)}
+            placeholder="Ask a question..."
+            disabled={isSubmitting || isStreaming}
+            className="min-w-0 flex-1 rounded-lg border border-slate-400 bg-white px-3 py-2 text-sm text-slate-900 outline-none placeholder:text-slate-500 focus:border-slate-700"
+          />
+
+          {isStreaming ? (
+            <button
+              type="button"
+              onClick={stop}
+              className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+            >
+              Stop
+            </button>
+          ) : (
+            <button
+              type="submit"
+              disabled={!input.trim() || isSubmitting}
+              className="rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Send
+            </button>
+          )}
+        </div>
+      </form>
+    </div>
+  );
+}

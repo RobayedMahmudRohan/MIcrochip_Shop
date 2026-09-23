@@ -1,4 +1,5 @@
 import { ButtonLink } from "@/components/button-link";
+import ChatWidget from "@/components/chat/chat-widget";
 
 export default function Home() {
   return (
@@ -21,6 +22,8 @@ export default function Home() {
           Request a Custom Build
         </ButtonLink>
       </div>
+
+      <ChatWidget />
     </div>
   );
 }
