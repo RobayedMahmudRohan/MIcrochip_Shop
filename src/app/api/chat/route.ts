@@ -1,6 +1,7 @@
 import {
   searchProducts,
   getCategorySummary,
+  compareProducts,
 } from "@/lib/ai/tools";
 import {
   convertToModelMessages,
@@ -22,6 +23,7 @@ export async function POST(request: Request) {
       tools: {
         searchProducts,
         getCategorySummary,
+        compareProducts,
       },
       
     });

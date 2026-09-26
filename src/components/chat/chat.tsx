@@ -5,6 +5,7 @@ import { useChat } from "@ai-sdk/react";
 import { useEffect, useRef, useState } from "react";
 import { ProductResults } from "./product-results";
 import { CategoryChart } from "./category-chart";
+import { ProductComparison } from "./product-comparison";
 
 type ChatToolPart = ToolUIPart<{
   searchProducts: {
@@ -32,6 +33,23 @@ type ChatToolPart = ToolUIPart<{
         category: string;
         productCount: number;
       }[];
+    };
+  };
+
+  compareProducts: {
+    input: {
+      products: string[];
+    };
+    output: {
+      products: {
+        name: string;
+        category: string;
+        serialNumber: string;
+        description: string | null;
+        price: number;
+        availability: "Available" | "Not available";
+      }[];
+      count: number;
     };
   };
 }>;
@@ -127,10 +145,11 @@ export default function Chat() {
           );
 
           const toolParts = message.parts.filter(
-          (part): part is ChatToolPart =>
-            part.type === "tool-searchProducts" ||
-            part.type === "tool-getCategorySummary",
-        );
+            (part): part is ChatToolPart =>
+              part.type === "tool-searchProducts" ||
+              part.type === "tool-getCategorySummary" ||
+              part.type === "tool-compareProducts",
+          );
 
           if (textParts.length === 0 && toolParts.length === 0) {
             return null;
@@ -164,7 +183,7 @@ export default function Chat() {
                 )}
 
                 {toolParts.map((part, index) => {
-                  if (part.type === "tool-getCategorySummary") {
+                  if (part.type === "tool-compareProducts") {
                     if (
                       part.state === "input-streaming" ||
                       part.state === "input-available"
@@ -174,24 +193,13 @@ export default function Chat() {
                           key={`${message.id}-tool-${index}`}
                           className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900"
                         >
-                          <p className="font-semibold">Checking product categories</p>
-                          <p className="mt-1">
-                            Checking the catalog to summarize products by category...
-                          </p>
-                        </div>
-                      );
-                    }
-                    if (part.state === "output-available") {
-                      return (
-                        <div
-                          key={`${message.id}-tool-${index}`}
-                          className="rounded-xl border border-emerald-200 bg-emerald-50 p-4"
-                        >
-                          <p className="mb-3 text-sm font-semibold text-emerald-900">
-                            Category summary completed
+                          <p className="font-semibold">
+                            Comparing products
                           </p>
 
-                          <CategoryChart categories={part.output.categories} />
+                          <p className="mt-1">
+                            Comparing the selected products side by side...
+                          </p>
                         </div>
                       );
                     }
@@ -202,21 +210,108 @@ export default function Chat() {
                           key={`${message.id}-tool-${index}`}
                           className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-900"
                         >
-                          <p className="font-semibold">Category summary failed</p>
+                          <p className="font-semibold">
+                            Comparison failed
+                          </p>
+
                           <p className="mt-1">
-                            The category information could not be retrieved. Please try again.
+                            The product comparison could not be completed.
+                            Please try again.
                           </p>
                         </div>
                       );
                     }
+
+                    if (part.state === "output-available") {
+                      return (
+                        <div
+                          key={`${message.id}-tool-${index}`}
+                          className="rounded-xl border border-emerald-200 bg-emerald-50 p-4"
+                        >
+                          <p className="mb-3 text-sm font-semibold text-emerald-900">
+                            Product comparison completed
+                          </p>
+
+                          <ProductComparison
+                            products={part.output.products}
+                          />
+                        </div>
+                      );
+                    }
+
+                    return null;
                   }
+
+                  if (part.type === "tool-getCategorySummary") {
+                    if (
+                      part.state === "input-streaming" ||
+                      part.state === "input-available"
+                    ) {
+                      return (
+                        <div
+                          key={`${message.id}-tool-${index}`}
+                          className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900"
+                        >
+                          <p className="font-semibold">
+                            Checking product categories
+                          </p>
+
+                          <p className="mt-1">
+                            Checking the catalog to summarize products by
+                            category...
+                          </p>
+                        </div>
+                      );
+                    }
+
+                    if (part.state === "output-available") {
+                      return (
+                        <div
+                          key={`${message.id}-tool-${index}`}
+                          className="rounded-xl border border-emerald-200 bg-emerald-50 p-4"
+                        >
+                          <p className="mb-3 text-sm font-semibold text-emerald-900">
+                            Category summary completed
+                          </p>
+
+                          <CategoryChart
+                            categories={part.output.categories}
+                          />
+                        </div>
+                      );
+                    }
+
+                    if (part.state === "output-error") {
+                      return (
+                        <div
+                          key={`${message.id}-tool-${index}`}
+                          className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-900"
+                        >
+                          <p className="font-semibold">
+                            Category summary failed
+                          </p>
+
+                          <p className="mt-1">
+                            The category information could not be retrieved.
+                            Please try again.
+                          </p>
+                        </div>
+                      );
+                    }
+
+                    return null;
+                  }
+
                   if (part.state === "input-streaming") {
                     return (
                       <div
                         key={`${message.id}-tool-${index}`}
                         className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900"
                       >
-                        <p className="font-semibold">Searching products</p>
+                        <p className="font-semibold">
+                          Searching products
+                        </p>
+
                         <p className="mt-1">
                           Preparing the product search...
                         </p>
@@ -278,8 +373,8 @@ export default function Chat() {
                         </p>
 
                         <p className="mt-1">
-                          The product catalog could not be searched. Please try
-                          again.
+                          The product catalog could not be searched. Please
+                          try again.
                         </p>
                       </div>
                     );

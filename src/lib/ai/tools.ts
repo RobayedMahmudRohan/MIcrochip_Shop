@@ -98,3 +98,67 @@ export const getCategorySummary = tool({
     };
   },
 });
+export const compareProducts = tool({
+  description:
+    "Compare multiple specific Microchip Shop products side by side. Use this when the user asks to compare two or more products.",
+
+  inputSchema: z.object({
+    products: z
+      .array(z.string().min(1))
+      .min(2)
+      .describe("The names or serial numbers of the products to compare."),
+  }),
+
+  execute: async ({ products }) => {
+    const comparisons = [];
+
+    for (const product of products) {
+      const normalizedProduct = product.toLowerCase().trim();
+
+      const [rows] = await db.query(
+        `
+          SELECT
+            p.name,
+            c.name AS category,
+            p.serial_number,
+            p.description,
+            p.price,
+            p.stock_quantity
+          FROM products p
+          INNER JOIN categories c ON c.id = p.category_id
+          WHERE
+            LOWER(p.name) = ?
+            OR LOWER(p.serial_number) = ?
+          LIMIT 1
+        `,
+        [normalizedProduct, normalizedProduct],
+      );
+
+      const row = (rows as Array<{
+        name: string;
+        category: string;
+        serial_number: string;
+        description: string | null;
+        price: number;
+        stock_quantity: number;
+      }>)[0];
+
+      if (row) {
+        comparisons.push({
+          name: row.name,
+          category: row.category,
+          serialNumber: row.serial_number,
+          description: row.description,
+          price: row.price,
+          availability:
+            row.stock_quantity > 0 ? "Available" : "Not available",
+        });
+      }
+    }
+
+    return {
+      products: comparisons,
+      count: comparisons.length,
+    };
+  },
+});
