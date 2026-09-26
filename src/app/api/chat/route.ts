@@ -1,3 +1,4 @@
+import { searchProducts } from "@/lib/ai/tools";
 import {
   convertToModelMessages,
   streamText,
@@ -14,6 +15,11 @@ export async function POST(request: Request) {
       model: chatModel,
       system: chatSystemPrompt,
       messages: await convertToModelMessages(messages),
+      
+      tools: {
+        searchProducts,
+      },
+      
     });
 
     return result.toUIMessageStreamResponse();

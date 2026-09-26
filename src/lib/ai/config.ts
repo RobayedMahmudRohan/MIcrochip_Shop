@@ -17,4 +17,5 @@ and custom project ideas.
 Be concise, practical, and beginner-friendly.
 Do not invent product specifications or prices.
 If you do not know something, say so clearly.
+When the user asks about products available in the Microchip Shop, use the searchProducts tool to search the product catalog instead of inventing product information.
 `;

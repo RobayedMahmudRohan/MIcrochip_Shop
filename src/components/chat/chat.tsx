@@ -1,7 +1,27 @@
 "use client";
 
+import type { ToolUIPart } from "ai";
 import { useChat } from "@ai-sdk/react";
 import { useEffect, useRef, useState } from "react";
+import { ProductResults } from "./product-results";
+
+type SearchProductsToolPart = ToolUIPart<{
+  searchProducts: {
+    input: {
+      query: string;
+    };
+    output: {
+      query: string;
+      products: {
+        name: string;
+        category: string;
+        serialNumber: string;
+        description: string;
+      }[];
+      count: number;
+    };
+  };
+}>;
 
 const NEAR_BOTTOM_THRESHOLD_PX = 80;
 
@@ -14,11 +34,13 @@ export default function Chat() {
   const isSubmitting = status === "submitted";
 
   const lastMessage = messages[messages.length - 1];
+
   const hasVisibleAssistantText =
     lastMessage?.role === "assistant" &&
     lastMessage.parts.some(
       (part) => part.type === "text" && part.text.length > 0,
     );
+
   const showThinkingIndicator =
     isSubmitting || (isStreaming && !hasVisibleAssistantText);
 
@@ -91,7 +113,12 @@ export default function Chat() {
               part.type === "text" && part.text.length > 0,
           );
 
-          if (textParts.length === 0) {
+          const toolParts = message.parts.filter(
+            (part): part is SearchProductsToolPart =>
+              part.type === "tool-searchProducts",
+          );
+
+          if (textParts.length === 0 && toolParts.length === 0) {
             return null;
           }
 
@@ -102,21 +129,100 @@ export default function Chat() {
                 message.role === "user" ? "justify-end" : "justify-start"
               }`}
             >
-              <div
-                className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm ${
-                  message.role === "user"
-                    ? "bg-slate-800 text-white"
-                    : "bg-white text-slate-900 border border-slate-200"
-                }`}
-              >
-                {textParts.map((part, index) => (
-                  <p
-                    key={`${message.id}-${index}`}
-                    className="whitespace-pre-wrap break-words"
+              <div className="max-w-[85%] space-y-3">
+                {textParts.length > 0 && (
+                  <div
+                    className={`rounded-2xl px-4 py-3 text-sm ${
+                      message.role === "user"
+                        ? "bg-slate-800 text-white"
+                        : "border border-slate-200 bg-white text-slate-900"
+                    }`}
                   >
-                    {part.text}
-                  </p>
-                ))}
+                    {textParts.map((part, index) => (
+                      <p
+                        key={`${message.id}-${index}`}
+                        className="whitespace-pre-wrap break-words"
+                      >
+                        {part.text}
+                      </p>
+                    ))}
+                  </div>
+                )}
+
+                {toolParts.map((part, index) => {
+                  if (part.state === "input-streaming") {
+                    return (
+                      <div
+                        key={`${message.id}-tool-${index}`}
+                        className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900"
+                      >
+                        <p className="font-semibold">Searching products</p>
+                        <p className="mt-1">
+                          Preparing the product search...
+                        </p>
+                      </div>
+                    );
+                  }
+
+                  if (part.state === "input-available") {
+                    return (
+                      <div
+                        key={`${message.id}-tool-${index}`}
+                        className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"
+                      >
+                        <p className="font-semibold">
+                          Searching the catalog
+                        </p>
+
+                        <p className="mt-1">
+                          Searching for:{" "}
+                          <span className="font-medium">
+                            {part.input.query}
+                          </span>
+                        </p>
+                      </div>
+                    );
+                  }
+
+                  if (part.state === "output-available") {
+                    return (
+                      <div
+                        key={`${message.id}-tool-${index}`}
+                        className="rounded-xl border border-emerald-200 bg-emerald-50 p-4"
+                      >
+                        <p className="mb-3 text-sm font-semibold text-emerald-900">
+                          Product search completed
+                        </p>
+
+                        <ProductResults
+                          query={part.output.query}
+                          products={part.output.products}
+                          count={part.output.count}
+                        />
+                      </div>
+                    );
+                  }
+
+                  if (part.state === "output-error") {
+                    return (
+                      <div
+                        key={`${message.id}-tool-${index}`}
+                        className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-900"
+                      >
+                        <p className="font-semibold">
+                          Product search failed
+                        </p>
+
+                        <p className="mt-1">
+                          The product catalog could not be searched. Please try
+                          again.
+                        </p>
+                      </div>
+                    );
+                  }
+
+                  return null;
+                })}
               </div>
             </div>
           );
