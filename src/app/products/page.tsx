@@ -24,7 +24,7 @@ export default async function ProductsPage() {
             </p>
 
             <p className="mt-2 font-semibold">
-              ${product.price}
+              ৳{product.price}
             </p>
 
             <p className="mt-1 text-sm text-gray-600">

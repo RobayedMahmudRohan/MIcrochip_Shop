@@ -4,8 +4,9 @@ import type { ToolUIPart } from "ai";
 import { useChat } from "@ai-sdk/react";
 import { useEffect, useRef, useState } from "react";
 import { ProductResults } from "./product-results";
+import { CategoryChart } from "./category-chart";
 
-type SearchProductsToolPart = ToolUIPart<{
+type ChatToolPart = ToolUIPart<{
   searchProducts: {
     input: {
       query: string;
@@ -17,8 +18,20 @@ type SearchProductsToolPart = ToolUIPart<{
         category: string;
         serialNumber: string;
         description: string;
+        price: number;
+        availability: "Available" | "Not available";
       }[];
       count: number;
+    };
+  };
+
+  getCategorySummary: {
+    input: Record<string, never>;
+    output: {
+      categories: {
+        category: string;
+        productCount: number;
+      }[];
     };
   };
 }>;
@@ -114,9 +127,10 @@ export default function Chat() {
           );
 
           const toolParts = message.parts.filter(
-            (part): part is SearchProductsToolPart =>
-              part.type === "tool-searchProducts",
-          );
+          (part): part is ChatToolPart =>
+            part.type === "tool-searchProducts" ||
+            part.type === "tool-getCategorySummary",
+        );
 
           if (textParts.length === 0 && toolParts.length === 0) {
             return null;
@@ -150,6 +164,52 @@ export default function Chat() {
                 )}
 
                 {toolParts.map((part, index) => {
+                  if (part.type === "tool-getCategorySummary") {
+                    if (
+                      part.state === "input-streaming" ||
+                      part.state === "input-available"
+                    ) {
+                      return (
+                        <div
+                          key={`${message.id}-tool-${index}`}
+                          className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900"
+                        >
+                          <p className="font-semibold">Checking product categories</p>
+                          <p className="mt-1">
+                            Checking the catalog to summarize products by category...
+                          </p>
+                        </div>
+                      );
+                    }
+                    if (part.state === "output-available") {
+                      return (
+                        <div
+                          key={`${message.id}-tool-${index}`}
+                          className="rounded-xl border border-emerald-200 bg-emerald-50 p-4"
+                        >
+                          <p className="mb-3 text-sm font-semibold text-emerald-900">
+                            Category summary completed
+                          </p>
+
+                          <CategoryChart categories={part.output.categories} />
+                        </div>
+                      );
+                    }
+
+                    if (part.state === "output-error") {
+                      return (
+                        <div
+                          key={`${message.id}-tool-${index}`}
+                          className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-900"
+                        >
+                          <p className="font-semibold">Category summary failed</p>
+                          <p className="mt-1">
+                            The category information could not be retrieved. Please try again.
+                          </p>
+                        </div>
+                      );
+                    }
+                  }
                   if (part.state === "input-streaming") {
                     return (
                       <div
@@ -185,22 +245,26 @@ export default function Chat() {
                   }
 
                   if (part.state === "output-available") {
-                    return (
-                      <div
-                        key={`${message.id}-tool-${index}`}
-                        className="rounded-xl border border-emerald-200 bg-emerald-50 p-4"
-                      >
-                        <p className="mb-3 text-sm font-semibold text-emerald-900">
-                          Product search completed
-                        </p>
+                    if (part.type === "tool-searchProducts") {
+                      return (
+                        <div
+                          key={`${message.id}-tool-${index}`}
+                          className="rounded-xl border border-emerald-200 bg-emerald-50 p-4"
+                        >
+                          <p className="mb-3 text-sm font-semibold text-emerald-900">
+                            Product search completed
+                          </p>
 
-                        <ProductResults
-                          query={part.output.query}
-                          products={part.output.products}
-                          count={part.output.count}
-                        />
-                      </div>
-                    );
+                          <ProductResults
+                            query={part.output.query}
+                            products={part.output.products}
+                            count={part.output.count}
+                          />
+                        </div>
+                      );
+                    }
+
+                    return null;
                   }
 
                   if (part.state === "output-error") {

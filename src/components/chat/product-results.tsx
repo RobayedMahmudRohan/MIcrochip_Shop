@@ -2,7 +2,9 @@ type Product = {
   name: string;
   category: string;
   serialNumber: string;
-  description: string;
+  description: string | null;
+  price: number;
+  availability: "Available" | "Not available";
 };
 
 type ProductResultsProps = {
@@ -58,7 +60,17 @@ export function ProductResults({
               </span>
             </div>
 
-            <p className="mt-3 text-xs text-gray-500">
+            <div className="mt-3 flex items-center justify-between gap-4">
+              <p className="font-semibold text-gray-900">
+                ৳{product.price}
+              </p>
+
+              <p className="text-sm text-gray-600">
+                {product.availability}
+              </p>
+            </div>
+
+            <p className="mt-2 text-xs text-gray-500">
               Serial: {product.serialNumber}
             </p>
           </div>

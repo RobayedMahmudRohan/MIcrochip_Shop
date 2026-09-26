@@ -1,4 +1,7 @@
-import { searchProducts } from "@/lib/ai/tools";
+import {
+  searchProducts,
+  getCategorySummary,
+} from "@/lib/ai/tools";
 import {
   convertToModelMessages,
   streamText,
@@ -18,6 +21,7 @@ export async function POST(request: Request) {
       
       tools: {
         searchProducts,
+        getCategorySummary,
       },
       
     });
