@@ -59,7 +59,7 @@ const NEAR_BOTTOM_THRESHOLD_PX = 80;
 export default function Chat() {
   const [input, setInput] = useState("");
 
-  const { messages, sendMessage, status, stop } = useChat();
+  const { messages, sendMessage, status, stop, error } = useChat();
 
   const isStreaming = status === "streaming";
   const isSubmitting = status === "submitted";
@@ -74,6 +74,8 @@ export default function Chat() {
 
   const showThinkingIndicator =
     isSubmitting || (isStreaming && !hasVisibleAssistantText);
+
+  const showError = status === "error" && !!error;
 
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const shouldAutoScrollRef = useRef(true);
@@ -114,6 +116,31 @@ export default function Chat() {
       text,
     });
   }
+  async function handleRetry() {
+    const lastUserMessage = [...messages]
+      .reverse()
+      .find((message) => message.role === "user");
+
+    if (!lastUserMessage || isSubmitting || isStreaming) {
+      return;
+    }
+
+    const text = lastUserMessage.parts
+      .filter(
+        (part): part is Extract<typeof part, { type: "text" }> =>
+          part.type === "text",
+      )
+      .map((part) => part.text)
+      .join("");
+
+    if (!text.trim()) {
+      return;
+    }
+
+    await sendMessage({
+      text,
+    });
+  }
 
   return (
     <div className="flex h-full w-full flex-col rounded-2xl border border-slate-300 bg-slate-100 shadow-sm">
@@ -134,7 +161,24 @@ export default function Chat() {
       >
         {messages.length === 0 && (
           <div className="rounded-lg bg-white p-4 text-sm text-slate-700">
-            Ask me something about electronics or the products in the shop.
+            <p>Ask me something about electronics or the products in the shop.</p>
+
+            <div className="mt-3 flex flex-wrap gap-2">
+              {[
+                "Find Arduino components",
+                "Show me available sensors",
+                "What products can I compare?",
+              ].map((prompt) => (
+                <button
+                  key={prompt}
+                  type="button"
+                  onClick={() => setInput(prompt)}
+                  className="rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-left text-sm text-slate-800 hover:bg-slate-100"
+                >
+                  {prompt}
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
@@ -391,6 +435,27 @@ export default function Chat() {
           <div className="flex justify-start">
             <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
               Thinking...
+            </div>
+          </div>
+        )}
+
+        {showError && (
+          <div className="flex justify-start">
+            <div className="max-w-[85%] rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">
+              <p className="font-semibold">Something went wrong</p>
+
+              <p className="mt-1">
+                We could not finish that response. Please try again.
+              </p>
+
+              <button
+                type="button"
+                onClick={handleRetry}
+                disabled={isSubmitting || isStreaming}
+                className="mt-3 rounded-lg bg-slate-800 px-3 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Retry
+              </button>
             </div>
           </div>
         )}

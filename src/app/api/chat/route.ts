@@ -13,6 +13,9 @@ import { chatModel, chatSystemPrompt } from "@/lib/ai/config";
 
 export async function POST(request: Request) {
   try {
+
+    //throw new Error("TEST: simulated AI failure");//test error handling
+
     const { messages }: { messages: UIMessage[] } = await request.json();
 
     const result = streamText({
