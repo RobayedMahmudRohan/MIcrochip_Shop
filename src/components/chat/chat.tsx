@@ -1,5 +1,6 @@
 "use client";
 
+import { AsyncButton } from "../ui/async-button";
 import type { ToolUIPart } from "ai";
 import { useChat } from "@ai-sdk/react";
 import { useEffect, useRef, useState } from "react";
@@ -104,6 +105,19 @@ export default function Chat() {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
+    const text = input.trim();
+
+    if (!text || isSubmitting || isStreaming) {
+      return;
+    }
+
+    setInput("");
+
+    await sendMessage({
+      text,
+    });
+  }
+  async function handleAnimatedSend() {
     const text = input.trim();
 
     if (!text || isSubmitting || isStreaming) {
@@ -478,18 +492,17 @@ export default function Chat() {
             <button
               type="button"
               onClick={stop}
-              className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+              className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-transform duration-200 hover:-translate-y-0.5 hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
             >
               Stop
             </button>
           ) : (
-            <button
-              type="submit"
+            <AsyncButton
+              onAction={handleAnimatedSend}
               disabled={!input.trim() || isSubmitting}
-              className="rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
             >
               Send
-            </button>
+            </AsyncButton>
           )}
         </div>
       </form>
