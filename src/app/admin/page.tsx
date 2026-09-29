@@ -1,6 +1,9 @@
 import { PlaceholderPage } from "@/components/placeholder-page";
+import { requireAdmin } from "@/lib/auth/guards";
 
-export default function AdminDashboardPage() {
+export default async function AdminDashboardPage() {
+  await requireAdmin("/admin");
+
   return (
     <PlaceholderPage
       title="Admin Dashboard"

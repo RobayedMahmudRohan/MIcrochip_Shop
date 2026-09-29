@@ -1,27 +1,62 @@
-import { ButtonLink } from "@/components/button-link";
 import ChatWidget from "@/components/chat/chat-widget";
+import { ProductCard } from "@/components/product-card";
+import { TopSellersCarousel } from "@/components/top-sellers-carousel";
+import {
+  getAllProductsShuffled,
+  getRandomTopSellingProducts,
+  getTopSellersOfTheDay,
+  type HomeProduct,
+} from "@/lib/products";
 
-export default function Home() {
+// Random picks and "today" sellers must be fresh on every request.
+export const dynamic = "force-dynamic";
+
+function ProductGrid({ products }: { products: HomeProduct[] }) {
   return (
-    <div className="flex flex-1 flex-col items-center justify-center bg-background px-6 py-16 text-center">
-      <span className="text-sm font-medium tracking-wide text-accent uppercase">
-        Electronics &amp; components
-      </span>
-      <h1 className="mt-3 max-w-xl text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-        Microchip Shop
-      </h1>
-      <p className="mt-3 max-w-md text-base text-muted sm:text-lg">
-        Project foundation is set up. Product pages, cart, and checkout will
-        be built in later phases.
-      </p>
-      <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-        <ButtonLink href="/products" variant="primary">
-          Browse Products
-        </ButtonLink>
-        <ButtonLink href="/custom-build" variant="secondary">
-          Request a Custom Build
-        </ButtonLink>
-      </div>
+    <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      {products.map((product) => (
+        <ProductCard key={product.id} product={product} />
+      ))}
+    </div>
+  );
+}
+
+export default async function Home() {
+  const [topSelling, topToday, allProducts] = await Promise.all([
+    getRandomTopSellingProducts(),
+    getTopSellersOfTheDay(),
+    getAllProductsShuffled(),
+  ]);
+
+  return (
+    <div className="mx-auto w-full max-w-5xl space-y-14 px-6 py-10">
+      {topSelling.length > 0 && <TopSellersCarousel products={topSelling} />}
+
+      {topToday.length > 0 && (
+        <section aria-labelledby="top-today-heading">
+          <h2
+            id="top-today-heading"
+            className="text-2xl font-semibold tracking-tight text-foreground"
+          >
+            Top sellers of the day
+          </h2>
+          <ProductGrid products={topToday} />
+        </section>
+      )}
+
+      <section aria-labelledby="all-products-heading">
+        <h2
+          id="all-products-heading"
+          className="text-2xl font-semibold tracking-tight text-foreground"
+        >
+          All products
+        </h2>
+        {allProducts.length > 0 ? (
+          <ProductGrid products={allProducts} />
+        ) : (
+          <p className="mt-4 text-muted">No products yet.</p>
+        )}
+      </section>
 
       <ChatWidget />
     </div>

@@ -48,3 +48,25 @@ The AI assistant uses the server-side `searchProducts` tool to search the Microc
   query: string;
 }
 ```
+
+## Architecture
+
+A single Next.js (App Router) application — UI and server code deploy together — with clear layers inside it:
+
+| Layer | Location | Notes |
+| --- | --- | --- |
+| UI | `src/app/**/page.tsx`, `src/components/` | Server Components by default; `"use client"` only where interactivity is needed. Never imports `src/lib/db.ts` or `src/lib/data/`. |
+| Server API | `src/lib/auth/actions.ts` (Server Actions), `src/app/api/` (Route Handlers) | Validates input, enforces auth, orchestrates the layers below. No SQL. |
+| Auth utilities | `src/lib/auth/` | `password.ts` (scrypt hashing), `session.ts` (session tokens and cookie), `guards.ts` (`requireUser` / `requireAdmin`) are server-only. `validation.ts` is pure and shared by forms and actions. |
+| Database access | `src/lib/db.ts` (connection pool), `src/lib/data/` | All auth SQL lives here, using parameterized queries. |
+
+Every server-side module imports `server-only`, so the build fails if one is accidentally pulled into a Client Component.
+
+## Testing
+
+```bash
+npm test          # Vitest + React Testing Library (unit/component)
+npm run test:e2e  # Playwright; builds and starts a production server on port 3100
+```
+
+E2E tests use the database from `.env.local` (local development only) and delete the `@e2e.microchip.test` users they create.
