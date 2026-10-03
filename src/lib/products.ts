@@ -305,3 +305,21 @@ export async function searchProductsByName(
 
   return toHomeProducts(rows);
 }
+
+// Current data for the products in a shopper's cart. Prices always come from
+// here, never from the browser.
+export async function getCartProducts(ids: number[]): Promise<HomeProduct[]> {
+  if (ids.length === 0) return [];
+
+  const [rows] = await db.query(
+    `
+      SELECT ${HOME_PRODUCT_COLUMNS}
+      FROM products p
+      INNER JOIN categories c ON c.id = p.category_id
+      WHERE p.id IN (?)
+    `,
+    [ids],
+  );
+
+  return toHomeProducts(rows);
+}

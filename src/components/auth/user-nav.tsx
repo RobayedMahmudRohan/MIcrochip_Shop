@@ -1,44 +1,34 @@
 import Link from "next/link";
-import { LogoutButton } from "@/components/auth/logout-button";
+import { ProfileDrawer } from "@/components/auth/profile-drawer";
 import { getCurrentUser } from "@/lib/auth/session";
+import { findUserEmailById } from "@/lib/data/users";
 
 const linkClass =
-  "inline-block py-1 text-muted transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:opacity-60";
+  "inline-block py-1 text-muted transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface";
 
 // Rendered as <li> items inside the header's nav list.
 export async function UserNav() {
   const user = await getCurrentUser();
 
   if (!user) {
+    // Registration is reached from the login page's "Create an account" link.
     return (
-      <>
-        <li>
-          <Link href="/login" className={linkClass}>
-            Login
-          </Link>
-        </li>
-        <li>
-          <Link href="/register" className={linkClass}>
-            Register
-          </Link>
-        </li>
-      </>
+      <li>
+        <Link href="/login" className={linkClass}>
+          Login
+        </Link>
+      </li>
     );
   }
 
-  const firstName = user.name.trim().split(/\s+/)[0];
+  // getCurrentUser() deliberately omits the email; the drawer shows it to its
+  // owner only.
+  const email = await findUserEmailById(user.id);
 
   return (
-    <>
-      <li>
-        <Link href="/profile" className={linkClass}>
-          Hi, <span className="text-foreground">{firstName}</span>
-        </Link>
-      </li>
-      <li>
-        <LogoutButton className={`${linkClass} cursor-pointer`} />
-      </li>
-    </>
+    <li>
+      <ProfileDrawer name={user.name} email={email} />
+    </li>
   );
 }
 

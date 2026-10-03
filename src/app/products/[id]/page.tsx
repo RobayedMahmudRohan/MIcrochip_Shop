@@ -123,7 +123,7 @@ export default async function ProductDetailsPage({
           </p>
 
           <div className="mt-5">
-            <AddToCart inStock={product.in_stock} />
+            <AddToCart productId={product.id} inStock={product.in_stock} />
           </div>
 
           {recentlySold > 0 && (

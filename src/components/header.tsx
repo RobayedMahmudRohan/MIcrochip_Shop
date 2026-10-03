@@ -1,13 +1,16 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { UserNav, UserNavFallback } from "@/components/auth/user-nav";
+import { CartNavLink } from "@/components/cart/cart-nav-link";
 import { SearchBar } from "@/components/search-bar";
 
 const navLinks = [
   { href: "/custom-build", label: "Custom Build" },
   { href: "/wishlist", label: "Wishlist" },
-  { href: "/cart", label: "Cart" },
 ] as const;
+
+const navLinkClass =
+  "py-1 text-muted transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface";
 
 export function Header() {
   return (
@@ -27,14 +30,14 @@ export function Header() {
           <ul className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm font-medium sm:gap-x-5">
             {navLinks.map((link) => (
               <li key={link.href}>
-                <Link
-                  href={link.href}
-                  className="inline-block py-1 text-muted transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
-                >
+                <Link href={link.href} className={`inline-block ${navLinkClass}`}>
                   {link.label}
                 </Link>
               </li>
             ))}
+            <li>
+              <CartNavLink className={navLinkClass} />
+            </li>
             <Suspense fallback={<UserNavFallback />}>
               <UserNav />
             </Suspense>

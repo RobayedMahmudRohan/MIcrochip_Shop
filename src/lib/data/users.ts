@@ -33,6 +33,12 @@ export async function findUserCredentialsByEmail(
   return (rows as UserCredentials[])[0] ?? null;
 }
 
+// For showing signed-in users their own email (e.g. the account drawer).
+export async function findUserEmailById(id: number): Promise<string | null> {
+  const [rows] = await db.query("SELECT email FROM users WHERE id = ?", [id]);
+  return (rows as { email: string }[])[0]?.email ?? null;
+}
+
 // Returns the new user's id. Throws DuplicateEmailError if the UNIQUE email
 // key rejects the insert (e.g. two simultaneous sign-ups).
 export async function createUser(user: {

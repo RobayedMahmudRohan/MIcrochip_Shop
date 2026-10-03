@@ -1,13 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
+import { addToCart, MAX_QUANTITY } from "@/lib/cart";
 
-const MAX_QUANTITY = 99;
-
-// UI only for now: the cart isn't built yet, so the button just says so.
-export function AddToCart({ inStock }: { inStock: boolean }) {
+export function AddToCart({ productId, inStock }: { productId: number; inStock: boolean }) {
   const [quantity, setQuantity] = useState(1);
-  const [notice, setNotice] = useState(false);
+  const [added, setAdded] = useState<number | null>(null);
 
   function changeQuantity(value: number) {
     if (Number.isNaN(value)) return;
@@ -54,7 +53,10 @@ export function AddToCart({ inStock }: { inStock: boolean }) {
 
         <button
           type="button"
-          onClick={() => setNotice(true)}
+          onClick={() => {
+            addToCart(productId, quantity);
+            setAdded(quantity);
+          }}
           disabled={!inStock}
           className="rounded-lg bg-primary px-6 py-2.5 font-medium text-primary-foreground transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50"
         >
@@ -63,7 +65,17 @@ export function AddToCart({ inStock }: { inStock: boolean }) {
       </div>
 
       <p role="status" className="mt-2 min-h-5 text-sm text-muted">
-        {notice && "The cart isn't available yet — coming soon."}
+        {added !== null && (
+          <>
+            Added {added} to your cart.{" "}
+            <Link
+              href="/cart"
+              className="font-medium text-primary hover:text-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            >
+              View cart
+            </Link>
+          </>
+        )}
       </p>
     </div>
   );
